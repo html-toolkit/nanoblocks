@@ -1,19 +1,16 @@
 {
     "name": "nanoblocks",
-    "version": "0.0.3",
-    "dependencies": {
-        "stylus": "0.37.x",
-        "csso": "*"
-    },
+    "version": "0.1.0",
     "devDependencies": {
+        "mocha": "*",
         "expect.js": "*",
+        "sinon": "*",
         "grunt": "*",
         "grunt-cli": "*",
         "grunt-contrib-jshint": "*",
-        "grunt-mocha": "*",
-        "sinon": "*"
-    },
-    "scripts": {
-        "install": "make all"
+        "grunt-contrib-concat": "*",
+        "grunt-contrib-uglify": "*",
+        "grunt-mocha-test": "*",
+        "load-grunt-tasks": "*"
     }
 }

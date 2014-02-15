@@ -1,31 +1,54 @@
-/*global module*/
 module.exports = function (grunt) {
     'use strict';
 
-    // mocha task
-    var gruntConfig = {};
-    grunt.loadNpmTasks('grunt-mocha');
-    gruntConfig.mocha = {
+    // load all grunt tasks matching the `grunt-*` pattern
+    require('load-grunt-tasks')(grunt);
+
+    var BANNER = '/*! v<%= pkg.version %> — ' +
+            '<%= grunt.template.today("yyyy-mm-dd") %> */' +
+            '\n\n';
+
+    var config = {};
+
+    config.pkg = grunt.file.readJSON('package.json');
+
+    config.concat = {
         options: {
-            bail: true,
-            log: true
+          stripBanners: true,
+          banner: BANNER
         },
-        index: [ 'test/index.html' ]
+        task: {
+          src: ['src/nb.js', 'src/ecma-5.js', 'src/nb.common.js', 'src/nb.node.js', 'src/nb.blocks.js'],
+          dest: 'build/<%= pkg.name %>.js',
+        }
     };
 
+    config.uglify = {
+      options: {
+        banner: BANNER,
+        compress: {
+          drop_console: true
+        },
+        wrap: 'nb'
+      },
+      task: {
+        src: ['build/<%= pkg.name %>.js'],
+        dest: 'build/<%= pkg.name %>.min.js'
+      }
+    };
 
-    // jshint tast: not ready for this
+    config.mochaTest = {
+      test: {
+        options: {
+          reporter: 'spec'
+        },
+        src: ['tests/*.js']
+      }
+    };
 
-    // grunt.loadNpmTasks('grunt-contrib-jshint');
-    // gruntConfig.jshint = {
-    //     options: {
-    //         jshintrc: '.jshintrc'
-    //     },
-    //     files: [
-    //         'src/*.js'
-    //     ]
-    // };
+    grunt.initConfig(config);
 
-    grunt.initConfig(gruntConfig);
-    grunt.registerTask('default', [ 'mocha' ]);
+    grunt.registerTask('build:dev', ['concat']);
+    grunt.registerTask('build:prod', ['concat', 'uglify']);
+    grunt.registerTask('tests', ['mochaTest']);
 };

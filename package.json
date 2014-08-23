@@ -12,5 +12,9 @@
         "grunt-contrib-uglify": "*",
         "grunt-mocha-test": "*",
         "load-grunt-tasks": "*"
+    },
+    "main": "nanoblocks.js",
+    "scripts": {
+        "start": "grunt build:prod"
     }
 }

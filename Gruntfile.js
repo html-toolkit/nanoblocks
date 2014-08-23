@@ -19,7 +19,7 @@ module.exports = function (grunt) {
         },
         task: {
           src: ['src/nb.js', 'src/ecma-5.js', 'src/nb.common.js', 'src/nb.node.js', 'src/nb.blocks.js'],
-          dest: 'build/<%= pkg.name %>.js',
+          dest: '<%= pkg.name %>.js',
         }
     };
 
@@ -32,8 +32,8 @@ module.exports = function (grunt) {
         wrap: 'nb'
       },
       task: {
-        src: ['build/<%= pkg.name %>.js'],
-        dest: 'build/<%= pkg.name %>.min.js'
+        src: ['<%= pkg.name %>.js'],
+        dest: '<%= pkg.name %>.min.js'
       }
     };
 

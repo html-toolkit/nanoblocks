@@ -1,6 +1,11 @@
 {
     "name": "nanoblocks",
+    "description": "Framework for building simple front-end components",
     "version": "0.1.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/html-toolkit/nanoblocks.git"
+      },
     "devDependencies": {
         "mocha": "*",
         "expect.js": "*",

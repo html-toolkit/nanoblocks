@@ -5,21 +5,20 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/html-toolkit/nanoblocks.git"
-      },
+    },
     "devDependencies": {
         "mocha": "*",
         "expect.js": "*",
         "sinon": "*",
         "grunt": "*",
         "grunt-cli": "*",
-        "grunt-contrib-jshint": "*",
-        "grunt-contrib-concat": "*",
-        "grunt-contrib-uglify": "*",
+        "grunt-browserify": "3.8.x",
         "grunt-mocha-test": "*",
         "load-grunt-tasks": "*"
     },
     "main": "nanoblocks.js",
     "scripts": {
-        "start": "grunt build:prod"
+        "start": "grunt build:prod",
+        "test": "grunt tests"
     }
 }

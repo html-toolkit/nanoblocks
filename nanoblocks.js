@@ -1,227 +1,7 @@
-/*! v0.1.0 — 2015-01-01 */
-
-var nb = exports;
-// Production steps of ECMA-262, Edition 5, 15.4.4.18
-// Reference: http://es5.github.com/#x15.4.4.18
-if ( !Array.prototype.forEach ) {
-
-  Array.prototype.forEach = function( callback, thisArg ) {
-
-    var T, k;
-
-    if ( this == null ) {
-      throw new TypeError( " this is null or not defined" );
-    }
-
-    // 1. Let O be the result of calling ToObject passing the |this| value as the argument.
-    var O = Object(this);
-
-    // 2. Let lenValue be the result of calling the Get internal method of O with the argument "length".
-    // 3. Let len be ToUint32(lenValue).
-    var len = O.length >>> 0; // Hack to convert O.length to a UInt32
-
-    // 4. If IsCallable(callback) is false, throw a TypeError exception.
-    // See: http://es5.github.com/#x9.11
-    if ( {}.toString.call(callback) != "[object Function]" ) {
-      throw new TypeError( callback + " is not a function" );
-    }
-
-    // 5. If thisArg was supplied, let T be thisArg; else let T be undefined.
-    if ( thisArg ) {
-      T = thisArg;
-    }
-
-    // 6. Let k be 0
-    k = 0;
-
-    // 7. Repeat, while k < len
-    while( k < len ) {
-
-      var kValue;
-
-      // a. Let Pk be ToString(k).
-      //   This is implicit for LHS operands of the in operator
-      // b. Let kPresent be the result of calling the HasProperty internal method of O with argument Pk.
-      //   This step can be combined with c
-      // c. If kPresent is true, then
-      if ( k in O ) {
-
-        // i. Let kValue be the result of calling the Get internal method of O with argument Pk.
-        kValue = O[ k ];
-
-        // ii. Call the Call internal method of callback with T as the this value and
-        // argument list containing kValue, k, and O.
-        callback.call( T, kValue, k, O );
-      }
-      // d. Increase k by 1.
-      k++;
-    }
-    // 8. return undefined
-  };
-}
-
-if (!Array.prototype.indexOf) {
-    Array.prototype.indexOf = function (searchElement /*, fromIndex */ ) {
-        if (this == null) {
-            throw new TypeError();
-        }
-        var t = Object(this);
-        var len = t.length >>> 0;
-        if (len === 0) {
-            return -1;
-        }
-        var n = 0;
-        if (arguments.length > 0) {
-            n = Number(arguments[1]);
-            if (n != n) { // shortcut for verifying if it's NaN
-                n = 0;
-            } else if (n != 0 && n != Infinity && n != -Infinity) {
-                n = (n > 0 || -1) * Math.floor(Math.abs(n));
-            }
-        }
-        if (n >= len) {
-            return -1;
-        }
-        var k = n >= 0 ? n : Math.max(len - Math.abs(n), 0);
-        for (; k < len; k++) {
-            if (k in t && t[k] === searchElement) {
-                return k;
-            }
-        }
-        return -1;
-    }
-}
-
-if (!String.prototype.trim) {
-    String.prototype.trim = function () {
-        return this.replace(/^\s+|\s+$/g,'');
-    };
-}
-
-//  Минимальный common.js
-//  ---------------------
-
-//  Наследование:
-//
-//      function Foo() {}
-//      Foo.prototype.foo = function() {
-//          console.log('foo');
-//      };
-//
-//      function Bar() {}
-//      nb.inherit(Bar, Foo);
-//
-//      var bar = Bar();
-//      bar.foo();
-//
-nb.inherit = function(child, parent) {
-    var F = function() {};
-    F.prototype = parent.prototype;
-    child.prototype = new F();
-    child.prototype.constructor = child;
-};
-
-//  Расширение объекта свойствами другого объекта(ов):
-//
-//      var foo = { foo: 42 };
-//      nb.extend( foo, { bar: 24 }, { boo: 66 } );
-//
-nb.extend = function(dest) {
-    var srcs = [].slice.call(arguments, 1);
-
-    for (var i = 0, l = srcs.length; i < l; i++) {
-        var src = srcs[i];
-        for (var key in src) {
-            dest[key] = src[key];
-        }
-    }
-
-    return dest;
-};
+/*! v0.1.0 — 2015-06-03 */
 
 
-nb.node = {};
-
-//  ---------------------------------------------------------------------------------------------------------------  //
-
-nb.node.data = function(node, key, value) {
-    //  Возвращаем или меняем data-атрибут.
-    if (key) {
-        if (value !== undefined) {
-            node.setAttribute('data-nb-' + key, value);
-        } else {
-            return parseValue( node.getAttribute('data-nb-' + key) || '' );
-        }
-    } else {
-        //  Возвращаем все data-атрибуты.
-        var data = {};
-
-        var attrs = node.attributes;
-        var r;
-        for (var i = 0, l = attrs.length; i < l; i++) {
-            var attr = attrs[i];
-            if (( r = /^data-nb-(.+)/.exec(attr.name) )) {
-                data[ r[1] ] = parseValue(attr.value);
-            }
-        }
-
-        return data;
-    }
-
-    function parseValue(value) {
-        var ch = value.charAt(0);
-        return (ch === '[' || ch === '{') ? eval( '(' + value + ')' ) : value;
-    }
-};
-
-//  ---------------------------------------------------------------------------------------------------------------  //
-
-//  Работа с модификаторами.
-
-//  Получить модификатор.
-nb.node.getMod = function(node, name) {
-    return nb.node.setMod(node, name);
-};
-
-var modCache = {};
-
-//  Установить/получить/удалить модификатор.
-nb.node.setMod = function(node, name, value) {
-    //  Например, name равно popup_to. В bem-терминах это значит, что имя блока popup, а модификатора to.
-    //  Ищем строки вида popup_to_left и popup_to (в этом случае, значение модификатора -- true).
-    var rx = modCache[name] || (( modCache[name] = RegExp('(?:^|\\s+)' + name + '(?:_([\\w-]+))?(?:$|\\s+)') ));
-
-    var className = node.className;
-
-    if (value === undefined) {
-        //  Получаем модификатор.
-
-        var r = rx.exec(className);
-        //  Если !r (т.е. r === null), значит модификатора нет вообще, возвращаем '' (FIXME: или нужно возвращать null?).
-        //  Если r[1] === undefined, это значит модификатор со значением true.
-        return (r) ? ( (r[1] === undefined) ? true : r[1] ) : '';
-
-    } else {
-        //  Удаляем старый модификатор, если он там был.
-        className = className.replace(rx, ' ').trim();
-
-        //  Тут недостаточно просто if (value) { ... },
-        //  потому что value может быть нулем.
-        if (value !== false && value !== '') {
-            //  Устанавливаем новое значение.
-            //  При этом, если значение true, то просто не добавляем часть после _.
-            className += ' ' + name + ( (value === true) ? '' : '_' + value );
-        }
-        node.className = className;
-
-    }
-};
-
-//  Удалить модификатор.
-nb.node.delMod = function(node, name) {
-    nb.node.setMod(node, name, false);
-};
-
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 //  Информация про все объявленные блоки.
 var _factories = {};
 
@@ -284,6 +64,7 @@ var _getNames = function(name) {
 //  Все реальные блоки наследуются от него при помощи функции nb.define.
 
 var Block = function() {};
+module.exports = Block;
 
 //  ---------------------------------------------------------------------------------------------------------------  //
 
@@ -555,14 +336,7 @@ Block.prototype.children = function() {
     return children;
 };
 
-//  Чтобы можно было вызывать методы базового класса.
-nb.Block = Block;
-
-//  ---------------------------------------------------------------------------------------------------------------  //
-
-//  Factory
-//  -------
-
+},{}],2:[function(require,module,exports){
 //  Для каждого типа блока ( == вызова nb.define) создается специальный объект,
 //  который хранит в себе информацию про конструктор и события, на которые подписывается блок.
 //  Кроме того, factory умеет создавать экземпляры нужных блоков.
@@ -576,6 +350,7 @@ var Factory = function(name, ctor, events) {
 
     this.events = this._prepareEvents(events);
 };
+module.exports = Factory;
 
 //  ---------------------------------------------------------------------------------------------------------------  //
 
@@ -1025,11 +800,21 @@ Factory._onevent = function(e) {
 Factory.get = function(name) {
     return _factories[name];
 };
+},{}],3:[function(require,module,exports){
+(function (global){
+var nb = require('./nb');
 
-//  ---------------------------------------------------------------------------------------------------------------  //
+if ('undefined' !== typeof module) {
+    module.exports = nb;
+} else {
+    global.nb = nb;
+}
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./nb":4}],4:[function(require,module,exports){
+var Block = require('./block');
+var Factory = require('./factory');
 
-//  Интерфейсная часть
-//  ------------------
+var nb = exports = {};
 
 //  Возвращает информацию про то, инициализирован ли блок на ноде.
 //  @param {Element} node Нода, для которой выполняется проверка.
@@ -1131,9 +916,9 @@ nb.define = function(name, methods, base) {
     //  Пустой конструктор.
     var ctor = function() {};
     //  Наследуемся либо от дефолтного конструктора, либо от указанного базового.
-    nb.inherit( ctor, (base) ? base.ctor : Block );
+    inherit( ctor, (base) ? base.ctor : Block );
     //  Все, что осталось в methods -- это дополнительные методы блока.
-    nb.extend(ctor.prototype, methods);
+    extend(ctor.prototype, methods);
 
     var factory = new Factory(name, ctor, events);
 
@@ -1147,6 +932,30 @@ nb.define = function(name, methods, base) {
     _factories[name] = factory;
 
     return factory;
+};
+
+//  Создаем "космос".
+//  Физически это пустой блок, созданный на ноде html.
+//  Его можно использовать как глобальный канал для отправки сообщений
+//  и для навешивания разных live-событий на html.
+nb.define({
+    events: {
+        'click': function(e) {
+            nb.trigger('space:click', e.target);
+        }
+    }
+}).create( document.getElementsByTagName('html')[0] );
+
+nb.on = function(name, handler) {
+    return space.on(name, handler);
+};
+
+nb.off = function(name, handler) {
+    space.off(name, handler);
+};
+
+nb.trigger = function(name, params) {
+    space.trigger(name, params);
 };
 
 //  ---------------------------------------------------------------------------------------------------------------  //
@@ -1183,28 +992,42 @@ nb.destroy = function(where) {
     }
 };
 
-//  ---------------------------------------------------------------------------------------------------------------  //
+//  Наследование:
+//
+//      function Foo() {}
+//      Foo.prototype.foo = function() {
+//          console.log('foo');
+//      };
+//
+//      function Bar() {}
+//      nb.inherit(Bar, Foo);
+//
+//      var bar = Bar();
+//      bar.foo();
+//
+function inherit(child, parent) {
+    var F = function() {};
+    F.prototype = parent.prototype;
+    child.prototype = new F();
+    child.prototype.constructor = child;
+};
 
-//  Создаем "космос".
-//  Физически это пустой блок, созданный на ноде html.
-//  Его можно использовать как глобальный канал для отправки сообщений
-//  и для навешивания разных live-событий на html.
-var space = nb.define({
-    events: {
-        'click': function(e) {
-            nb.trigger('space:click', e.target);
+//  Расширение объекта свойствами другого объекта(ов):
+//
+//      var foo = { foo: 42 };
+//      nb.extend( foo, { bar: 24 }, { boo: 66 } );
+//
+function extend(dest) {
+    var srcs = [].slice.call(arguments, 1);
+
+    for (var i = 0, l = srcs.length; i < l; i++) {
+        var src = srcs[i];
+        for (var key in src) {
+            dest[key] = src[key];
         }
     }
-}).create( document.getElementsByTagName('html')[0] );
 
-nb.on = function(name, handler) {
-    return space.on(name, handler);
+    return dest;
 };
 
-nb.off = function(name, handler) {
-    space.off(name, handler);
-};
-
-nb.trigger = function(name, params) {
-    space.trigger(name, params);
-};
+},{"./block":1,"./factory":2}]},{},[3]);

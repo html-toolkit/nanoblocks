@@ -12,13 +12,12 @@ module.exports = function (grunt) {
 
     config.pkg = grunt.file.readJSON('package.json');
 
-    config.concat = {
+    config.browserify = {
         options: {
-          stripBanners: true,
           banner: BANNER
         },
         task: {
-          src: ['src/nb.js', 'src/ecma-5.js', 'src/nb.common.js', 'src/nb.node.js', 'src/nb.blocks.js'],
+          src: ['src/index.js'],
           dest: '<%= pkg.name %>.js',
         }
     };
@@ -28,8 +27,7 @@ module.exports = function (grunt) {
         banner: BANNER,
         compress: {
           drop_console: true
-        },
-        wrap: 'nb'
+        }
       },
       task: {
         src: ['<%= pkg.name %>.js'],
@@ -37,18 +35,9 @@ module.exports = function (grunt) {
       }
     };
 
-    config.mochaTest = {
-      test: {
-        options: {
-          reporter: 'spec'
-        },
-        src: ['tests/*.js']
-      }
-    };
-
     grunt.initConfig(config);
 
-    grunt.registerTask('build:dev', ['concat']);
-    grunt.registerTask('build:prod', ['concat', 'uglify']);
+    grunt.registerTask('build:dev', ['browserify']);
+    grunt.registerTask('build:prod', ['browserify', 'uglify']);
     grunt.registerTask('tests', ['mochaTest']);
 };

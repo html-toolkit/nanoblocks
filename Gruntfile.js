@@ -39,5 +39,4 @@ module.exports = function (grunt) {
 
     grunt.registerTask('build:dev', ['browserify']);
     grunt.registerTask('build:prod', ['browserify', 'uglify']);
-    grunt.registerTask('tests', ['mochaTest']);
 };

@@ -45,6 +45,11 @@ Block.prototype.__init = function(node) {
 
     //  Возможность что-то сделать сразу после инициализации.
     this.trigger('init');
+
+    var space = helpers._cache['nb-1']['nb-0'];
+    if (space) {
+        space.trigger('inited:' + this.id, this);
+    }
 };
 
 //  ---------------------------------------------------------------------------------------------------------------  //

@@ -49,6 +49,11 @@ Block.prototype.__init = function(node) {
 
     //  Возможность что-то сделать сразу после инициализации.
     this.trigger('init');
+
+    var space = helpers._cache['nb-1']['nb-0'];
+    if (space) {
+        space.trigger('inited:' + this.id, this);
+    }
 };
 
 //  ---------------------------------------------------------------------------------------------------------------  //
@@ -872,14 +877,7 @@ nb.block = function(node, events, blockName) {
 
     //  Если указано имя блока - инициализируем и возвращаем только его.
     if (blockName) {
-        var block = Factory.get(blockName).create(node, events);
-        if (name !== 'nb-0') {
-            block.on('init', function() {
-                console.log(block);
-                space.trigger('inited:' + blockName, this);
-            });
-        }
-        return block;
+        return Factory.get(blockName).create(node, events);
     }
 
     //  Инициализируем все блоки на ноде.
@@ -902,13 +900,7 @@ nb.blocks = function(node, events) {
     var names = helpers._getNames(name);
     var blocks = [];
     for (var i = 0; i < names.length; i++) {
-        var block = Factory.get(names[i]).create(node, events);
-        if (name !== 'nb-0') {
-            block.on('init', function() {
-                space.trigger('inited:' + blockName, this);
-            });
-        }
-        blocks.push(block);
+        blocks.push(Factory.get(names[i]).create(node, events));
     }
     return blocks;
 };

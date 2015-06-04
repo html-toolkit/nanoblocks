@@ -22,21 +22,7 @@ module.exports = function (grunt) {
         }
     };
 
-    config.uglify = {
-      options: {
-        banner: BANNER,
-        compress: {
-          drop_console: true
-        }
-      },
-      task: {
-        src: ['<%= pkg.name %>.js'],
-        dest: '<%= pkg.name %>.min.js'
-      }
-    };
-
     grunt.initConfig(config);
 
-    grunt.registerTask('build:dev', ['browserify']);
-    grunt.registerTask('build:prod', ['browserify', 'uglify']);
+    grunt.registerTask('build', ['browserify']);
 };

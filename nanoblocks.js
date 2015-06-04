@@ -1,59 +1,9 @@
-/*! v0.1.0 — 2015-06-03 */
+/*! v0.1.0 — 2015-06-04 */
 
 
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-//  Информация про все объявленные блоки.
-var _factories = {};
-
-//  Список всех уже повешенных на document событий.
-var _docEvents = {};
-
-//  Список всех поддерживаемых DOM-событий.
-var _domEvents = [
-    'click',
-    'dblclick',
-    'mouseup',
-    'mousedown',
-    'keydown',
-    'keypress',
-    'keyup',
-    'input',
-    'change',
-
-    // local: вешаются напрямую на ноду блока / подноду блока по селектору
-    'blur',
-
-    /*
-        FIXME: Сейчас эти события называются mouseover и mouseout.
-        'mouseenter',
-        'mouseleave',
-    */
-    'mouseover',
-    'mouseout',
-    'focusin',
-    'focusout'
-];
-
-//  Regexp для строк вида 'click', 'click .foo'.
-var _rx_domEvents = new RegExp( '^(' + _domEvents.join('|') + ')\\b\\s*(.*)?$' );
-
-//  Автоинкрементный id для блоков, у которых нет атрибута id.
-var _id = 0;
-
-//  Кэш проинициализированных блоков.
-//  По id ноды хранится хэш с блоками на ноде.
-//  Пример: { 'button-id': { 'popup-toggler': {}, 'counter': {} } }
-var _cache = {};
-
-//  Получает название блока по ноде.
-var _getName = function(node) {
-    var _data_nb = node.getAttribute('data-nb');
-    return _data_nb ? _data_nb.trim().replace(/\s+/g, ' ') : _data_nb;
-};
-
-var _getNames = function(name) {
-    return name.split(/\s+/);
-};
+var Factory = require('./factory');
+var helpers = require('./helpers');
 
 //  ---------------------------------------------------------------------------------------------------------------  //
 
@@ -99,14 +49,6 @@ Block.prototype.__init = function(node) {
 
     //  Возможность что-то сделать сразу после инициализации.
     this.trigger('init');
-
-    //  Отправляем в "космос" сообщение, что блок проинициализирован.
-    //  Проверка space нужна для того, чтобы при создании самого space не происходило ошибки.
-    //  FIXME: Сделать поддержку специального атрибута, например, data-nb-inited-key, который, если есть,
-    //  используется вместо id. Нужно для нескольких одинаковых блоков (у которых id, очевидно, разные).
-    if (space) {
-        nb.trigger('inited:' + this.id, this);
-    }
 };
 
 //  ---------------------------------------------------------------------------------------------------------------  //
@@ -177,7 +119,7 @@ Block.prototype.destroy = function() {
     }
 
     //  Удалем блок из кэша.
-    _cache[this.id] = null;
+    helpers._cache[this.id] = null;
 };
 
 //  ---------------------------------------------------------------------------------------------------------------  //
@@ -207,7 +149,7 @@ Block.prototype.__getHandlers = function(name) {
 //  повешенные на document (см. nb.define).
 //
 Block.prototype.on = function(name, handler) {
-    var r = _rx_domEvents.exec(name);
+    var r = helpers._rx_domEvents.exec(name);
     if (r) {
         //  DOM-событие.
 
@@ -230,7 +172,7 @@ Block.prototype.__bindCustomEvent = function(name, handler) {
 //  Если не передать handler, то удалятся вообще все обработчики события name.
 //  Типы событий такие же, как и в on().
 Block.prototype.off = function(name, handler) {
-    var r = _rx_domEvents.exec(name);
+    var r = helpers._rx_domEvents.exec(name);
     if (r) {
         //  DOM-событие.
 
@@ -336,7 +278,9 @@ Block.prototype.children = function() {
     return children;
 };
 
-},{}],2:[function(require,module,exports){
+},{"./factory":2,"./helpers":3}],2:[function(require,module,exports){
+var helpers = require('./helpers');
+
 //  Для каждого типа блока ( == вызова nb.define) создается специальный объект,
 //  который хранит в себе информацию про конструктор и события, на которые подписывается блок.
 //  Кроме того, factory умеет создавать экземпляры нужных блоков.
@@ -404,7 +348,7 @@ Factory.prototype._prepareEvents = function(events) {
 
     for (var event in events) {
         //  Матчим строки вида 'click' или 'click .foo'.
-        var r = _rx_domEvents.exec(event);
+        var r = helpers._rx_domEvents.exec(event);
         var handlers, key;
         if (r) {
             //  Тип DOM-события, например, click.
@@ -455,7 +399,7 @@ Factory.prototype._prepareEvents = function(events) {
     //  Для всех типов DOM-событий этого класса вешаем глобальный обработчик на document.
     for (var type in dom) {
         //  При этом, запоминаем, что один раз мы его уже повесили и повторно не вешаем.
-        if (!_docEvents[type]) {
+        if (!helpers._docEvents[type]) {
             $(document).on(type, function(e) {
                 //  Все обработчики вызывают один чудо-метод:
 
@@ -470,7 +414,7 @@ Factory.prototype._prepareEvents = function(events) {
                 return Factory._onevent(e);
             });
 
-            _docEvents[type] = true;
+            helpers._docEvents[type] = true;
         }
     }
 
@@ -498,24 +442,24 @@ Factory.prototype.create = function(node, events) {
     if (!id) {
         //  У блока нет атрибута id. Создаем его, генерим уникальный id.
         //  В следующий раз блок можно будет достать из кэша при по этому id.
-        id = 'nb-' + _id++;
+        id = 'nb-' + helpers._id++;
         node.setAttribute('id', id);
     }
 
     //  Инициализируем кэш для блоков ноды, если нужно.
-    if ( !_cache[id] ) {
-        _cache[id] = {};
+    if ( !helpers._cache[id] ) {
+        helpers._cache[id] = {};
 
         //  FIXME: Что будет, если node.getAttribute('data-nb') !== this.name ?
         //  FIXME: для ручных вызовов nb.block() надо будет дописывать имена блоков в атрибут data-nb
         //  У ноды каждого блока должен быть атрибут data-nb.
-        if ( _getName(node) === null ) {
+        if ( helpers._getName(node) === null ) {
             node.setAttribute('data-nb', this.name);
         }
     }
 
     //  Создаём блок текущей фабрики для переданной ноды.
-    if ( !_cache[id][this.name] ) {
+    if ( !helpers._cache[id][this.name] ) {
 
         var block = new this.ctor();
 
@@ -532,10 +476,10 @@ Factory.prototype.create = function(node, events) {
 
         //  Кэшируем блок. Последующие вызовы nb.block на этой же ноде
         //  достанут блок из кэша.
-        _cache[id][this.name] = block;
+        helpers._cache[id][this.name] = block;
     }
 
-    return _cache[id][this.name];
+    return helpers._cache[id][this.name];
 };
 
 //  ---------------------------------------------------------------------------------------------------------------  //
@@ -646,7 +590,7 @@ Factory._onevent = function(e) {
             break;
         }
 
-        var names = _getNames(name);
+        var names = helpers._getNames(name);
         var r = true;
 
         for (var j = 0; j < names.length; j++) {
@@ -701,7 +645,7 @@ Factory._onevent = function(e) {
         //  Идем по DOM'у вверх, начиная с node и заканчивая первой попавшейся нодой блока (т.е. с атрибутом data-nb).
         //  Условие о наличии parentNode позволяет остановиться на ноде <html>.
         while (( parent = node.parentNode )) {
-            if (( name = _getName(node) )) {
+            if (( name = helpers._getName(node) )) {
                 blockNode = node;
                 break;
             }
@@ -798,30 +742,120 @@ Factory._onevent = function(e) {
 
 //  Достаем класс по имени.
 Factory.get = function(name) {
-    return _factories[name];
+    return helpers._factories[name];
 };
-},{}],3:[function(require,module,exports){
-(function (global){
-var nb = require('./nb');
+},{"./helpers":3}],3:[function(require,module,exports){
+var helpers = {};
+module.exports = helpers;
 
-if ('undefined' !== typeof module) {
-    module.exports = nb;
-} else {
-    global.nb = nb;
-}
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./nb":4}],4:[function(require,module,exports){
+//  Наследование:
+//
+//      function Foo() {}
+//      Foo.prototype.foo = function() {
+//          console.log('foo');
+//      };
+//
+//      function Bar() {}
+//      nb.inherit(Bar, Foo);
+//
+//      var bar = Bar();
+//      bar.foo();
+//
+helpers.inherit = function (child, parent) {
+    var F = function() {};
+    F.prototype = parent.prototype;
+    child.prototype = new F();
+    child.prototype.constructor = child;
+};
+
+//  Расширение объекта свойствами другого объекта(ов):
+//
+//      var foo = { foo: 42 };
+//      nb.extend( foo, { bar: 24 }, { boo: 66 } );
+//
+helpers.extend = function (dest) {
+    var srcs = [].slice.call(arguments, 1);
+
+    for (var i = 0, l = srcs.length; i < l; i++) {
+        var src = srcs[i];
+        for (var key in src) {
+            dest[key] = src[key];
+        }
+    }
+
+    return dest;
+};
+
+//  Информация про все объявленные блоки.
+helpers._factories = {};
+
+//  Список всех уже повешенных на document событий.
+helpers._docEvents = {};
+
+//  Список всех поддерживаемых DOM-событий.
+helpers._domEvents = [
+    'click',
+    'dblclick',
+    'mouseup',
+    'mousedown',
+    'keydown',
+    'keypress',
+    'keyup',
+    'input',
+    'change',
+
+    // local: вешаются напрямую на ноду блока / подноду блока по селектору
+    'blur',
+
+    /*
+        FIXME: Сейчас эти события называются mouseover и mouseout.
+        'mouseenter',
+        'mouseleave',
+    */
+    'mouseover',
+    'mouseout',
+    'focusin',
+    'focusout'
+];
+
+//  Regexp для строк вида 'click', 'click .foo'.
+helpers._rx_domEvents = new RegExp( '^(' + helpers._domEvents.join('|') + ')\\b\\s*(.*)?$' );
+
+//  Получает название блока по ноде.
+helpers._getName = function(node) {
+    var _data_nb = node.getAttribute('data-nb');
+    return _data_nb ? _data_nb.trim().replace(/\s+/g, ' ') : _data_nb;
+};
+
+helpers._getNames = function(name) {
+    return name.split(/\s+/);
+};
+
+//  Автоинкрементный id для блоков, у которых нет атрибута id.
+helpers._id = 0;
+
+//  Кэш проинициализированных блоков.
+//  По id ноды хранится хэш с блоками на ноде.
+//  Пример: { 'button-id': { 'popup-toggler': {}, 'counter': {} } }
+helpers._cache = {};
+},{}],4:[function(require,module,exports){
+(function (global){
+var nb = {};
+
 var Block = require('./block');
 var Factory = require('./factory');
+var helpers = require('./helpers');
 
-var nb = exports = {};
+global.nb = module.exports = nb;
+
+var space;
 
 //  Возвращает информацию про то, инициализирован ли блок на ноде.
 //  @param {Element} node Нода, для которой выполняется проверка.
 //  @param {string=} blockName (optional) Имя блока, созданность которого проверяется.
 nb.hasBlock = function(node, blockName) {
     var id = node.getAttribute('id');
-    return !!(id && _cache[id] && (!blockName || _cache[id][blockName]));
+    return !!(id && helpers._cache[id] && (!blockName || helpers._cache[id][blockName]));
 };
 
 //  Если передано название блока, создаётся блок этого типа на ноде. Возвращается созданный блок.
@@ -830,7 +864,7 @@ nb.hasBlock = function(node, blockName) {
 //      var popup = nb.block( document.getElementById('popup') );
 //
 nb.block = function(node, events, blockName) {
-    var name = _getName(node);
+    var name = helpers._getName(node);
     if (!name) {
         //  Эта нода не содержит блока. Ничего не делаем.
         return null;
@@ -838,7 +872,14 @@ nb.block = function(node, events, blockName) {
 
     //  Если указано имя блока - инициализируем и возвращаем только его.
     if (blockName) {
-        return Factory.get(blockName).create(node, events);
+        var block = Factory.get(blockName).create(node, events);
+        if (name !== 'nb-0') {
+            block.on('init', function() {
+                console.log(block);
+                space.trigger('inited:' + blockName, this);
+            });
+        }
+        return block;
     }
 
     //  Инициализируем все блоки на ноде.
@@ -851,17 +892,23 @@ nb.block = function(node, events, blockName) {
 //      var popup = nb.blocks( document.getElementById('popup') );
 //
 nb.blocks = function(node, events) {
-    var name = _getName(node);
+    var name = helpers._getName(node);
     if (!name) {
         return [];
     }
 
     //  Инициализируем все блоки на ноде.
     //  Возвращаем первый из списка блоков.
-    var names = _getNames(name);
+    var names = helpers._getNames(name);
     var blocks = [];
     for (var i = 0; i < names.length; i++) {
-        blocks.push( Factory.get(names[i]).create(node, events) );
+        var block = Factory.get(names[i]).create(node, events);
+        if (name !== 'nb-0') {
+            block.on('init', function() {
+                space.trigger('inited:' + blockName, this);
+            });
+        }
+        blocks.push(block);
     }
     return blocks;
 };
@@ -901,7 +948,7 @@ nb.define = function(name, methods, base) {
         base = methods;
         methods = name;
         //  Генерим ему уникальное имя.
-        name = 'nb-' + _id++;
+        name = 'nb-' + helpers._id++;
     }
 
     if (base) {
@@ -916,9 +963,9 @@ nb.define = function(name, methods, base) {
     //  Пустой конструктор.
     var ctor = function() {};
     //  Наследуемся либо от дефолтного конструктора, либо от указанного базового.
-    inherit( ctor, (base) ? base.ctor : Block );
+    helpers.inherit( ctor, (base) ? base.ctor : Block );
     //  Все, что осталось в methods -- это дополнительные методы блока.
-    extend(ctor.prototype, methods);
+    helpers.extend(ctor.prototype, methods);
 
     var factory = new Factory(name, ctor, events);
 
@@ -929,7 +976,7 @@ nb.define = function(name, methods, base) {
 
     //  Сохраняем для дальнейшего применения.
     //  Достать нужную factory можно вызовом Factory.get(name).
-    _factories[name] = factory;
+    helpers._factories[name] = factory;
 
     return factory;
 };
@@ -938,7 +985,7 @@ nb.define = function(name, methods, base) {
 //  Физически это пустой блок, созданный на ноде html.
 //  Его можно использовать как глобальный канал для отправки сообщений
 //  и для навешивания разных live-событий на html.
-nb.define({
+var space = nb.define({
     events: {
         'click': function(e) {
             nb.trigger('space:click', e.target);
@@ -992,42 +1039,5 @@ nb.destroy = function(where) {
     }
 };
 
-//  Наследование:
-//
-//      function Foo() {}
-//      Foo.prototype.foo = function() {
-//          console.log('foo');
-//      };
-//
-//      function Bar() {}
-//      nb.inherit(Bar, Foo);
-//
-//      var bar = Bar();
-//      bar.foo();
-//
-function inherit(child, parent) {
-    var F = function() {};
-    F.prototype = parent.prototype;
-    child.prototype = new F();
-    child.prototype.constructor = child;
-};
-
-//  Расширение объекта свойствами другого объекта(ов):
-//
-//      var foo = { foo: 42 };
-//      nb.extend( foo, { bar: 24 }, { boo: 66 } );
-//
-function extend(dest) {
-    var srcs = [].slice.call(arguments, 1);
-
-    for (var i = 0, l = srcs.length; i < l; i++) {
-        var src = srcs[i];
-        for (var key in src) {
-            dest[key] = src[key];
-        }
-    }
-
-    return dest;
-};
-
-},{"./block":1,"./factory":2}]},{},[3]);
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./block":1,"./factory":2,"./helpers":3}]},{},[4]);

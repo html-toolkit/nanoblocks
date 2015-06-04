@@ -1,55 +1,5 @@
-//  Информация про все объявленные блоки.
-var _factories = {};
-
-//  Список всех уже повешенных на document событий.
-var _docEvents = {};
-
-//  Список всех поддерживаемых DOM-событий.
-var _domEvents = [
-    'click',
-    'dblclick',
-    'mouseup',
-    'mousedown',
-    'keydown',
-    'keypress',
-    'keyup',
-    'input',
-    'change',
-
-    // local: вешаются напрямую на ноду блока / подноду блока по селектору
-    'blur',
-
-    /*
-        FIXME: Сейчас эти события называются mouseover и mouseout.
-        'mouseenter',
-        'mouseleave',
-    */
-    'mouseover',
-    'mouseout',
-    'focusin',
-    'focusout'
-];
-
-//  Regexp для строк вида 'click', 'click .foo'.
-var _rx_domEvents = new RegExp( '^(' + _domEvents.join('|') + ')\\b\\s*(.*)?$' );
-
-//  Автоинкрементный id для блоков, у которых нет атрибута id.
-var _id = 0;
-
-//  Кэш проинициализированных блоков.
-//  По id ноды хранится хэш с блоками на ноде.
-//  Пример: { 'button-id': { 'popup-toggler': {}, 'counter': {} } }
-var _cache = {};
-
-//  Получает название блока по ноде.
-var _getName = function(node) {
-    var _data_nb = node.getAttribute('data-nb');
-    return _data_nb ? _data_nb.trim().replace(/\s+/g, ' ') : _data_nb;
-};
-
-var _getNames = function(name) {
-    return name.split(/\s+/);
-};
+var Factory = require('./factory');
+var helpers = require('./helpers');
 
 //  ---------------------------------------------------------------------------------------------------------------  //
 
@@ -95,14 +45,6 @@ Block.prototype.__init = function(node) {
 
     //  Возможность что-то сделать сразу после инициализации.
     this.trigger('init');
-
-    //  Отправляем в "космос" сообщение, что блок проинициализирован.
-    //  Проверка space нужна для того, чтобы при создании самого space не происходило ошибки.
-    //  FIXME: Сделать поддержку специального атрибута, например, data-nb-inited-key, который, если есть,
-    //  используется вместо id. Нужно для нескольких одинаковых блоков (у которых id, очевидно, разные).
-    if (space) {
-        nb.trigger('inited:' + this.id, this);
-    }
 };
 
 //  ---------------------------------------------------------------------------------------------------------------  //
@@ -173,7 +115,7 @@ Block.prototype.destroy = function() {
     }
 
     //  Удалем блок из кэша.
-    _cache[this.id] = null;
+    helpers._cache[this.id] = null;
 };
 
 //  ---------------------------------------------------------------------------------------------------------------  //
@@ -203,7 +145,7 @@ Block.prototype.__getHandlers = function(name) {
 //  повешенные на document (см. nb.define).
 //
 Block.prototype.on = function(name, handler) {
-    var r = _rx_domEvents.exec(name);
+    var r = helpers._rx_domEvents.exec(name);
     if (r) {
         //  DOM-событие.
 
@@ -226,7 +168,7 @@ Block.prototype.__bindCustomEvent = function(name, handler) {
 //  Если не передать handler, то удалятся вообще все обработчики события name.
 //  Типы событий такие же, как и в on().
 Block.prototype.off = function(name, handler) {
-    var r = _rx_domEvents.exec(name);
+    var r = helpers._rx_domEvents.exec(name);
     if (r) {
         //  DOM-событие.
 

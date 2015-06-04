@@ -1,3 +1,5 @@
+var helpers = require('./helpers');
+
 //  Для каждого типа блока ( == вызова nb.define) создается специальный объект,
 //  который хранит в себе информацию про конструктор и события, на которые подписывается блок.
 //  Кроме того, factory умеет создавать экземпляры нужных блоков.
@@ -65,7 +67,7 @@ Factory.prototype._prepareEvents = function(events) {
 
     for (var event in events) {
         //  Матчим строки вида 'click' или 'click .foo'.
-        var r = _rx_domEvents.exec(event);
+        var r = helpers._rx_domEvents.exec(event);
         var handlers, key;
         if (r) {
             //  Тип DOM-события, например, click.
@@ -116,7 +118,7 @@ Factory.prototype._prepareEvents = function(events) {
     //  Для всех типов DOM-событий этого класса вешаем глобальный обработчик на document.
     for (var type in dom) {
         //  При этом, запоминаем, что один раз мы его уже повесили и повторно не вешаем.
-        if (!_docEvents[type]) {
+        if (!helpers._docEvents[type]) {
             $(document).on(type, function(e) {
                 //  Все обработчики вызывают один чудо-метод:
 
@@ -131,7 +133,7 @@ Factory.prototype._prepareEvents = function(events) {
                 return Factory._onevent(e);
             });
 
-            _docEvents[type] = true;
+            helpers._docEvents[type] = true;
         }
     }
 
@@ -159,24 +161,24 @@ Factory.prototype.create = function(node, events) {
     if (!id) {
         //  У блока нет атрибута id. Создаем его, генерим уникальный id.
         //  В следующий раз блок можно будет достать из кэша при по этому id.
-        id = 'nb-' + _id++;
+        id = 'nb-' + helpers._id++;
         node.setAttribute('id', id);
     }
 
     //  Инициализируем кэш для блоков ноды, если нужно.
-    if ( !_cache[id] ) {
-        _cache[id] = {};
+    if ( !helpers._cache[id] ) {
+        helpers._cache[id] = {};
 
         //  FIXME: Что будет, если node.getAttribute('data-nb') !== this.name ?
         //  FIXME: для ручных вызовов nb.block() надо будет дописывать имена блоков в атрибут data-nb
         //  У ноды каждого блока должен быть атрибут data-nb.
-        if ( _getName(node) === null ) {
+        if ( helpers._getName(node) === null ) {
             node.setAttribute('data-nb', this.name);
         }
     }
 
     //  Создаём блок текущей фабрики для переданной ноды.
-    if ( !_cache[id][this.name] ) {
+    if ( !helpers._cache[id][this.name] ) {
 
         var block = new this.ctor();
 
@@ -193,10 +195,10 @@ Factory.prototype.create = function(node, events) {
 
         //  Кэшируем блок. Последующие вызовы nb.block на этой же ноде
         //  достанут блок из кэша.
-        _cache[id][this.name] = block;
+        helpers._cache[id][this.name] = block;
     }
 
-    return _cache[id][this.name];
+    return helpers._cache[id][this.name];
 };
 
 //  ---------------------------------------------------------------------------------------------------------------  //
@@ -307,7 +309,7 @@ Factory._onevent = function(e) {
             break;
         }
 
-        var names = _getNames(name);
+        var names = helpers._getNames(name);
         var r = true;
 
         for (var j = 0; j < names.length; j++) {
@@ -362,7 +364,7 @@ Factory._onevent = function(e) {
         //  Идем по DOM'у вверх, начиная с node и заканчивая первой попавшейся нодой блока (т.е. с атрибутом data-nb).
         //  Условие о наличии parentNode позволяет остановиться на ноде <html>.
         while (( parent = node.parentNode )) {
-            if (( name = _getName(node) )) {
+            if (( name = helpers._getName(node) )) {
                 blockNode = node;
                 break;
             }
@@ -459,5 +461,5 @@ Factory._onevent = function(e) {
 
 //  Достаем класс по имени.
 Factory.get = function(name) {
-    return _factories[name];
+    return helpers._factories[name];
 };

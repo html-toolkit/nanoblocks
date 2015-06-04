@@ -1,7 +1,7 @@
 {
     "name": "nanoblocks",
     "description": "Framework for building simple front-end components",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/html-toolkit/nanoblocks.git"
@@ -16,9 +16,8 @@
         "grunt-mocha-test": "*",
         "load-grunt-tasks": "*"
     },
-    "main": "nanoblocks.js",
+    "main": "src/nanoblocks.js",
     "scripts": {
-        "start": "grunt build:prod",
-        "test": "grunt tests"
+        "start": "grunt build:prod"
     }
 }

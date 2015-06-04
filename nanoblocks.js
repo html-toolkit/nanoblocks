@@ -844,14 +844,13 @@ helpers._id = 0;
 //  Пример: { 'button-id': { 'popup-toggler': {}, 'counter': {} } }
 helpers._cache = {};
 },{}],4:[function(require,module,exports){
-(function (global){
 var nb = {};
 
 var Block = require('./block');
 var Factory = require('./factory');
 var helpers = require('./helpers');
 
-global.nb = module.exports = nb;
+module.exports = nb;
 
 var space;
 
@@ -1031,5 +1030,12 @@ nb.destroy = function(where) {
     }
 };
 
+},{"./block":1,"./factory":2,"./helpers":3}],5:[function(require,module,exports){
+(function (global){
+/**
+ * Версия для браузера,
+ * чтобы можно было подключить через <script src="">
+ */
+global.nb = require('./nanoblocks');
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./block":1,"./factory":2,"./helpers":3}]},{},[4]);
+},{"./nanoblocks":4}]},{},[5]);

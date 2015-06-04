@@ -4,7 +4,7 @@ var Block = require('./block');
 var Factory = require('./factory');
 var helpers = require('./helpers');
 
-global.nb = module.exports = nb;
+module.exports = nb;
 
 var space;
 

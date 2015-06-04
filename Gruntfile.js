@@ -17,7 +17,7 @@ module.exports = function (grunt) {
           banner: BANNER
         },
         task: {
-          src: ['src/index.js'],
+          src: ['src/nanoblocks.standalone.js'],
           dest: '<%= pkg.name %>.js',
         }
     };
